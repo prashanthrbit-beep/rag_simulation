@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Simulator</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+h1 {
+  text-align: center;
+}
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+textarea, input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin-top: 10px;
+}
+button {
+  margin-top: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+}
+.chunk {
+  background: #334155;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 6px;
+}
+.highlight {
+  background: #16a34a;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>RAG Simulator</h1>
+
+<div class="card">
+<h3>1. Add Knowledge Base</h3>
+<textarea id="kb" rows="4" placeholder="Enter knowledge text..."></textarea>
+<button onclick="chunkData()">Chunk & Embed</button>
+<div id="chunks"></div>
+</div>
+
+<div class="card">
+<h3>2. Enter Query</h3>
+<input id="query" placeholder="Ask something..." />
+<button onclick="retrieve()">Retrieve</button>
+<div id="retrieved"></div>
+</div>
+
+<div class="card">
+<h3>3. Generate Answer</h3>
+<button onclick="generate()">Generate Response</button>
+<div id="answer"></div>
+</div>
+
+</div>
+
+<script>
+let chunks = [];
+let retrievedChunks = [];
+
+function chunkData() {
+  const text = document.getElementById('kb').value;
+  chunks = text.split('.').map(t => t.trim()).filter(t => t);
+  document.getElementById('chunks').innerHTML = chunks.map(c => `<div class='chunk'>${c}</div>`).join('');
+}
+
+function similarity(a, b) {
+  const aWords = a.toLowerCase().split(' ');
+  const bWords = b.toLowerCase().split(' ');
+  let score = 0;
+  aWords.forEach(word => {
+    if (bWords.includes(word)) score++;
+  });
+  return score;
+}
+
+function retrieve() {
+  const query = document.getElementById('query').value;
+  retrievedChunks = chunks
+    .map(c => ({ text: c, score: similarity(query, c) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  document.getElementById('retrieved').innerHTML = retrievedChunks.map(c => 
+    `<div class='chunk highlight'>${c.text} (score: ${c.score})</div>`
+  ).join('');
+}
+
+function generate() {
+  if (retrievedChunks.length === 0) return;
+  const context = retrievedChunks.map(c => c.text).join('. ');
+  const query = document.getElementById('query').value;
+
+  const answer = `Based on context: ${context}. Answer: ${context}`;
+
+  document.getElementById('answer').innerText = answer;
+}
+</script>
+</body>
+</html>
